@@ -1,0 +1,7 @@
+{
+  "name": "@donswap/exchange",
+  "version": "1.0.0",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.7.3"
+  }
+}
