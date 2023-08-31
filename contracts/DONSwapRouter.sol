@@ -139,9 +139,9 @@ library DONSwapLibrary {
     ) internal pure returns (uint256 amountOut) {
         require(amountIn > 0, 'DONSwap: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'DONSwap: INSUFFICIENT_LIQUIDITY');
-        uint256 amountInWithFee = amountIn * 997;
+        uint256 amountInWithFee = amountIn * 9975;
         uint256 numerator = amountInWithFee * reserveOut;
-        uint256 denominator = (reserveIn * 1000) + amountInWithFee;
+        uint256 denominator = (reserveIn * 10000) + amountInWithFee;
         amountOut = numerator / denominator;
     }
 
@@ -152,8 +152,8 @@ library DONSwapLibrary {
     ) internal pure returns (uint256 amountIn) {
         require(amountOut > 0, 'DONSwap: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'DONSwap: INSUFFICIENT_LIQUIDITY');
-        uint256 numerator = reserveIn * amountOut * 1000;
-        uint256 denominator = (reserveOut - amountOut) * 997;
+        uint256 numerator = reserveIn * amountOut * 10000;
+        uint256 denominator = (reserveOut - amountOut) * 9975;
         amountIn = (numerator / denominator) + 1;
     }
 
