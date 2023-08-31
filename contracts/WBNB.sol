@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-contract WDOGE {
-    string public name = "Wrapped DOGE";
-    string public symbol = "WWDOGE";
+contract WBNB {
+    string public name = 'Wrapped BNB';
+    string public symbol = 'WBNB';
     uint8 public decimals = 18;
 
     event Approval(address indexed src, address indexed guy, uint256 wad);
@@ -49,11 +49,7 @@ contract WDOGE {
         return transferFrom(msg.sender, dst, wad);
     }
 
-    function transferFrom(
-        address src,
-        address dst,
-        uint256 wad
-    ) public returns (bool) {
+    function transferFrom(address src, address dst, uint256 wad) public returns (bool) {
         // solhint-disable-next-line reason-string
         require(balanceOf[src] >= wad);
 
