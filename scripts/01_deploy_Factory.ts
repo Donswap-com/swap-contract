@@ -1,5 +1,4 @@
 import { ethers } from 'hardhat'
-import config from '../../../config'
 
 async function main() {
   // eslint-disable-next-line no-unused-vars
@@ -9,7 +8,7 @@ async function main() {
   const factory: any = await Factory.deploy(owner.address)
   await factory.deployed()
 
-  await factory.setFeeTo(config.EXCHANGE_FEES)
+  await factory.setFeeTo('0x5dC3967ACc048b3644F86158DC164bF7303e6D55')
 
   console.log('Factory address:', factory.address)
   // Modify DONSwapLibrary.sol to add the following hash

@@ -108,7 +108,7 @@ library DONSwapLibrary {
                             hex'ff',
                             factory,
                             keccak256(abi.encodePacked(token0, token1)),
-                            hex'fcf5385a7c3b81496097fe7430ba9da88cf8ec0cd6e589e4f00e1147a734c8af'
+                            hex'5aa237486249d910536edd25f1114160e08e342bdda7fb4c9b6e4e60081bf9ef'
                         )
                     )
                 )
@@ -186,23 +186,6 @@ library DONSwapLibrary {
     }
 }
 
-// File contracts/libraries/SafeMath.sol
-pragma solidity ^0.8.4;
-
-library SafeMath {
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a + b;
-    }
-
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a - b;
-    }
-
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a * b;
-    }
-}
-
 // File contracts/libraries/TransferHelper.sol
 pragma solidity ^0.8.4;
 
@@ -240,6 +223,10 @@ pragma solidity ^0.8.4;
 
 interface IDONSwapRouter {
     event AddLiquidity(address tokenA, address tokenB, uint256 liquidity);
+    event AddLiquidityETH(address token, uint256 liquidity);
+    event RemoveLiquidity(address tokenA, address tokenB, uint256 liquidity);
+    event RemoveLiquidityETH(address token, uint256 liquidity);
+    event Swap(address tokenA, address tokenB, uint256 amountA, uint256 amountB);
 
     function factory() external view returns (address);
 
@@ -494,8 +481,6 @@ interface IWBNB {
 pragma solidity ^0.8.4;
 
 contract DONSwapRouter is IDONSwapRouter {
-    using SafeMath for uint256;
-
     address public immutable override factory;
 
     // solhint-disable-next-line var-name-mixedcase
@@ -509,12 +494,15 @@ contract DONSwapRouter is IDONSwapRouter {
 
     // solhint-disable-next-line var-name-mixedcase
     constructor(address _factory, address _WBNB) {
+        require(_factory != address(0) && _WBNB != address(0), 'DONSwap: ZERO_ADDRESS');
         factory = _factory;
         WBNB = _WBNB;
     }
 
     receive() external payable {
-        assert(msg.sender == WBNB);
+        if (msg.sender != WBNB) {
+            revert('DONSwap: INVALID_MSG_SENDER');
+        }
     }
 
     function _addLiquidity(
@@ -560,6 +548,7 @@ contract DONSwapRouter is IDONSwapRouter {
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
         liquidity = IDONSwapPair(pair).mint(to);
+        emit AddLiquidity(tokenA, tokenB, liquidity);
     }
 
     function addLiquidityETH(
@@ -590,6 +579,8 @@ contract DONSwapRouter is IDONSwapRouter {
         IWBNB(WBNB).deposit{value: amountETH}();
         assert(IWBNB(WBNB).transfer(pair, amountETH));
         liquidity = IDONSwapPair(pair).mint(to);
+        emit AddLiquidityETH(token, liquidity);
+
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
     }
 
@@ -607,6 +598,8 @@ contract DONSwapRouter is IDONSwapRouter {
         (uint256 amount0, uint256 amount1) = IDONSwapPair(pair).burn(to);
         (address token0, ) = DONSwapLibrary.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        emit RemoveLiquidity(tokenA, tokenB, liquidity);
+
         require(amountA >= amountAMin, 'DONSwap: INSUFFICIENT_A_AMOUNT');
         require(amountB >= amountBMin, 'DONSwap: INSUFFICIENT_B_AMOUNT');
     }
@@ -628,6 +621,8 @@ contract DONSwapRouter is IDONSwapRouter {
             address(this),
             deadline
         );
+        emit RemoveLiquidityETH(token, liquidity);
+
         TransferHelper.safeTransfer(token, to, amountToken);
         IWBNB(WBNB).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
@@ -650,6 +645,7 @@ contract DONSwapRouter is IDONSwapRouter {
         uint256 value = approveMax ? type(uint256).max : liquidity;
         IDONSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
+        emit RemoveLiquidity(tokenA, tokenB, liquidity);
     }
 
     function removeLiquidityETHWithPermit(
@@ -668,6 +664,7 @@ contract DONSwapRouter is IDONSwapRouter {
         uint256 value = approveMax ? type(uint256).max : liquidity;
         IDONSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
+        emit RemoveLiquidityETH(token, liquidity);
     }
 
     function removeLiquidityETHSupportingFeeOnTransferTokens(
@@ -738,6 +735,7 @@ contract DONSwapRouter is IDONSwapRouter {
             amounts[0]
         );
         _swap(amounts, path, to);
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
     }
 
     function swapTokensForExactTokens(
@@ -756,6 +754,7 @@ contract DONSwapRouter is IDONSwapRouter {
             amounts[0]
         );
         _swap(amounts, path, to);
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
     }
 
     function swapExactETHForTokens(
@@ -770,6 +769,7 @@ contract DONSwapRouter is IDONSwapRouter {
         IWBNB(WBNB).deposit{value: amounts[0]}();
         assert(IWBNB(WBNB).transfer(DONSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
     }
 
     function swapTokensForExactETH(
@@ -790,6 +790,8 @@ contract DONSwapRouter is IDONSwapRouter {
             amounts[0]
         );
         _swap(amounts, path, address(this));
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
+
         IWBNB(WBNB).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
@@ -812,6 +814,8 @@ contract DONSwapRouter is IDONSwapRouter {
             amounts[0]
         );
         _swap(amounts, path, address(this));
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
+
         IWBNB(WBNB).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
@@ -829,6 +833,8 @@ contract DONSwapRouter is IDONSwapRouter {
         IWBNB(WBNB).deposit{value: amounts[0]}();
         assert(IWBNB(WBNB).transfer(DONSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
         _swap(amounts, path, to);
+        emit Swap(path[0], path[1], amounts[0], amounts[amounts.length - 1]);
+
         if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
     }
 
@@ -844,7 +850,7 @@ contract DONSwapRouter is IDONSwapRouter {
                 (uint256 reserveInput, uint256 reserveOutput) = input == token0
                     ? (reserve0, reserve1)
                     : (reserve1, reserve0);
-                amountInput = IBEP20(input).balanceOf(address(pair)).sub(reserveInput);
+                amountInput = IBEP20(input).balanceOf(address(pair)) - (reserveInput);
                 amountOutput = DONSwapLibrary.getAmountOut(amountInput, reserveInput, reserveOutput);
             }
             (uint256 amount0Out, uint256 amount1Out) = input == token0
@@ -871,7 +877,7 @@ contract DONSwapRouter is IDONSwapRouter {
         uint256 balanceBefore = IBEP20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IBEP20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IBEP20(path[path.length - 1]).balanceOf(to) - (balanceBefore) >= amountOutMin,
             'DONSwap: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
@@ -890,7 +896,7 @@ contract DONSwapRouter is IDONSwapRouter {
         _swapSupportingFeeOnTransferTokens(path, to);
         // solhint-disable-next-line reason-string
         require(
-            IBEP20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IBEP20(path[path.length - 1]).balanceOf(to) - (balanceBefore) >= amountOutMin,
             'DONSwap: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }

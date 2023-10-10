@@ -2,11 +2,8 @@
 pragma solidity ^0.8.4;
 
 import './interfaces/IDONSwapBEP20.sol';
-import './libraries/SafeMath.sol';
 
 contract DONSwapBEP20 is IDONSwapBEP20 {
-    using SafeMath for uint256;
-
     // solhint-disable-next-line
     string public constant name = 'DONSwap LP Token';
     // solhint-disable-next-line
@@ -44,14 +41,14 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
     }
 
     function _mint(address to, uint256 value) internal {
-        totalSupply = totalSupply.add(value);
-        balanceOf[to] = balanceOf[to].add(value);
+        totalSupply = totalSupply + value;
+        balanceOf[to] = balanceOf[to] + value;
         emit Transfer(address(0), to, value);
     }
 
     function _burn(address from, uint256 value) internal {
-        balanceOf[from] = balanceOf[from].sub(value);
-        totalSupply = totalSupply.sub(value);
+        balanceOf[from] = balanceOf[from] - value;
+        totalSupply = totalSupply - value;
         emit Transfer(from, address(0), value);
     }
 
@@ -61,8 +58,8 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
     }
 
     function _transfer(address from, address to, uint256 value) private {
-        balanceOf[from] = balanceOf[from].sub(value);
-        balanceOf[to] = balanceOf[to].add(value);
+        balanceOf[from] = balanceOf[from] - value;
+        balanceOf[to] = balanceOf[to] + value;
         emit Transfer(from, to, value);
     }
 
@@ -78,7 +75,7 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
 
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         if (allowance[from][msg.sender] != type(uint256).max) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
+            allowance[from][msg.sender] = allowance[from][msg.sender] - value;
         }
         _transfer(from, to, value);
         return true;

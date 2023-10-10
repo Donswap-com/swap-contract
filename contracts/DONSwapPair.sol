@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 import './DONSwapBEP20.sol';
-import './libraries/SafeMath.sol';
 import './libraries/UQ112x112.sol';
 import './libraries/Math.sol';
 import './interfaces/IBEP20.sol';
@@ -12,7 +11,6 @@ import './interfaces/IDONSwapPair.sol';
 import './utils/Lock.sol';
 
 contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
-    using SafeMath for uint256;
     using UQ112x112 for uint224;
 
     uint256 public constant MINIMUM_LIQUIDITY = 10 ** 3;
@@ -72,11 +70,11 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
         uint256 _kLast = kLast;
         if (feeOn) {
             if (_kLast != 0) {
-                uint256 rootK = Math.sqrt(uint256(_reserve0).mul(_reserve1));
+                uint256 rootK = Math.sqrt(uint256(_reserve0) * (_reserve1));
                 uint256 rootKLast = Math.sqrt(_kLast);
                 if (rootK > rootKLast) {
-                    uint256 numerator = totalSupply.mul(rootK.sub(rootKLast)).mul(8);
-                    uint256 denominator = rootK.mul(17).add(rootKLast.mul(8));
+                    uint256 numerator = totalSupply * (rootK - (rootKLast)) * (8);
+                    uint256 denominator = rootK * (17) + (rootKLast * (8));
                     uint256 liquidity = numerator / denominator;
                     if (liquidity > 0) _mint(feeTo, liquidity);
                 }
@@ -90,22 +88,22 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves();
         uint256 balance0 = IBEP20(token0).balanceOf(address(this));
         uint256 balance1 = IBEP20(token1).balanceOf(address(this));
-        uint256 amount0 = balance0.sub(_reserve0);
-        uint256 amount1 = balance1.sub(_reserve1);
+        uint256 amount0 = balance0 - (_reserve0);
+        uint256 amount1 = balance1 - (_reserve1);
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == 0) {
-            liquidity = Math.sqrt(amount0.mul(amount1)).sub(MINIMUM_LIQUIDITY);
+            liquidity = Math.sqrt(amount0 * (amount1)) - (MINIMUM_LIQUIDITY);
             _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
-            liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
+            liquidity = Math.min((amount0 * (_totalSupply)) / _reserve0, (amount1 * (_totalSupply)) / _reserve1);
         }
         require(liquidity > 0, 'DONSwap: INSUFFICIENT_MINTED');
         _mint(to, liquidity);
 
         _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0).mul(reserve1);
+        if (feeOn) kLast = uint256(reserve0) * (reserve1);
         emit Mint(msg.sender, amount0, amount1);
     }
 
@@ -119,8 +117,8 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
         uint256 _totalSupply = totalSupply;
-        amount0 = liquidity.mul(balance0) / _totalSupply;
-        amount1 = liquidity.mul(balance1) / _totalSupply;
+        amount0 = (liquidity * (balance0)) / _totalSupply;
+        amount1 = (liquidity * (balance1)) / _totalSupply;
         require(amount0 > 0 && amount1 > 0, 'DONSwap: INSUFFICIENT_BURNED');
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
@@ -129,7 +127,7 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
         balance1 = IBEP20(_token1).balanceOf(address(this));
 
         _update(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint256(reserve0).mul(reserve1);
+        if (feeOn) kLast = uint256(reserve0) * (reserve1);
         emit Burn(msg.sender, amount0, amount1, to);
     }
 
@@ -154,10 +152,10 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(amount0In > 0 || amount1In > 0, 'DONSwap: INSUFFICIENT_INPUT_AMOUNT');
         {
-            uint256 balance0Adjusted = (balance0.mul(10000).sub(amount0In.mul(25)));
-            uint256 balance1Adjusted = (balance1.mul(10000).sub(amount1In.mul(25)));
+            uint256 balance0Adjusted = (balance0 * (10000) - (amount0In * (25)));
+            uint256 balance1Adjusted = (balance1 * (10000) - (amount1In * (25)));
             require(
-                balance0Adjusted.mul(balance1Adjusted) >= uint256(_reserve0).mul(_reserve1).mul(10000 ** 2),
+                balance0Adjusted * (balance1Adjusted) >= uint256(_reserve0) * (_reserve1) * (10000 ** 2),
                 'DONSwap: K'
             );
         }
@@ -169,8 +167,8 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
     function skim(address to) external lock {
         address _token0 = token0;
         address _token1 = token1;
-        _safeTransfer(_token0, to, IBEP20(_token0).balanceOf(address(this)).sub(reserve0));
-        _safeTransfer(_token1, to, IBEP20(_token1).balanceOf(address(this)).sub(reserve1));
+        _safeTransfer(_token0, to, IBEP20(_token0).balanceOf(address(this)) - (reserve0));
+        _safeTransfer(_token1, to, IBEP20(_token1).balanceOf(address(this)) - (reserve1));
     }
 
     function sync() external lock {
