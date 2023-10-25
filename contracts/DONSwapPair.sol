@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL
 pragma solidity ^0.8.4;
 
-import './DONSwapBEP20.sol';
-import './libraries/UQ112x112.sol';
-import './libraries/Math.sol';
-import './interfaces/IBEP20.sol';
-import './interfaces/IDONSwapFactory.sol';
-import './interfaces/IDONSwapCallee.sol';
-import './interfaces/IDONSwapPair.sol';
-import './utils/Lock.sol';
+import {Lock} from './utils/Lock.sol';
+import {IDONSwapPair} from './interfaces/IDONSwapPair.sol';
+import {DONSwapBEP20} from './DONSwapBEP20.sol';
+import {UQ112x112} from './libraries/UQ112x112.sol';
+import {IBEP20} from './interfaces/IBEP20.sol';
+import {IDONSwapFactory} from './interfaces/IDONSwapFactory.sol';
+import {Math} from './libraries/Math.sol';
+import {IDONSwapCallee} from './interfaces/IDONSwapCallee.sol';
 
 contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
     using UQ112x112 for uint224;
@@ -27,7 +27,7 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
     uint256 public price1CumulativeLast;
     uint256 public kLast;
 
-    constructor() Lock() {
+    constructor() {
         factory = msg.sender;
     }
 
@@ -44,14 +44,12 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
     }
 
     function _safeTransfer(address token, address to, uint256 value) private {
-        // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'DONSwap: TRANSFER_FAILED');
     }
 
     function _update(uint256 balance0, uint256 balance1, uint112 _reserve0, uint112 _reserve1) private {
         require(balance0 <= type(uint112).max && balance1 <= type(uint112).max, 'DONSwap: OVERFLOW');
-        // solhint-disable-next-line not-rely-on-time
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast;
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
@@ -73,8 +71,8 @@ contract DONSwapPair is Lock, IDONSwapPair, DONSwapBEP20 {
                 uint256 rootK = Math.sqrt(uint256(_reserve0) * (_reserve1));
                 uint256 rootKLast = Math.sqrt(_kLast);
                 if (rootK > rootKLast) {
-                    uint256 numerator = totalSupply * (rootK - (rootKLast)) * (8);
-                    uint256 denominator = rootK * (17) + (rootKLast * (8));
+                    uint256 numerator = totalSupply * (rootK - (rootKLast));
+                    uint256 denominator = rootK * (17) + (rootKLast);
                     uint256 liquidity = numerator / denominator;
                     if (liquidity > 0) _mint(feeTo, liquidity);
                 }

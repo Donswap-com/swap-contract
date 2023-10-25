@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL
 pragma solidity ^0.8.4;
 
-import './interfaces/IDONSwapBEP20.sol';
+import {IDONSwapBEP20} from './interfaces/IDONSwapBEP20.sol';
+import {ECDSA} from './libraries/ECDSA.sol';
 
 contract DONSwapBEP20 is IDONSwapBEP20 {
-    // solhint-disable-next-line
     string public constant name = 'DONSwap LP Token';
-    // solhint-disable-next-line
     string public constant symbol = 'DONSwap-LP';
-    // solhint-disable-next-line
     uint8 public constant decimals = 18;
 
     uint256 public totalSupply;
@@ -16,7 +14,6 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    // solhint-disable-next-line
     bytes32 public DOMAIN_SEPARATOR;
 
     bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
@@ -25,7 +22,6 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
 
     constructor() {
         uint256 chainId;
-        // solhint-disable-next-line no-inline-assembly
         assembly {
             chainId := chainid()
         }
@@ -41,14 +37,14 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
     }
 
     function _mint(address to, uint256 value) internal {
-        totalSupply = totalSupply + value;
-        balanceOf[to] = balanceOf[to] + value;
+        totalSupply = totalSupply + (value);
+        balanceOf[to] = balanceOf[to] + (value);
         emit Transfer(address(0), to, value);
     }
 
     function _burn(address from, uint256 value) internal {
-        balanceOf[from] = balanceOf[from] - value;
-        totalSupply = totalSupply - value;
+        balanceOf[from] = balanceOf[from] - (value);
+        totalSupply = totalSupply - (value);
         emit Transfer(from, address(0), value);
     }
 
@@ -58,8 +54,8 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
     }
 
     function _transfer(address from, address to, uint256 value) private {
-        balanceOf[from] = balanceOf[from] - value;
-        balanceOf[to] = balanceOf[to] + value;
+        balanceOf[from] = balanceOf[from] - (value);
+        balanceOf[to] = balanceOf[to] + (value);
         emit Transfer(from, to, value);
     }
 
@@ -75,7 +71,7 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
 
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         if (allowance[from][msg.sender] != type(uint256).max) {
-            allowance[from][msg.sender] = allowance[from][msg.sender] - value;
+            allowance[from][msg.sender] = allowance[from][msg.sender] - (value);
         }
         _transfer(from, to, value);
         return true;
@@ -90,7 +86,6 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
         bytes32 r,
         bytes32 s
     ) external {
-        // solhint-disable-next-line not-rely-on-time
         require(deadline >= block.timestamp, 'DONSwap: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
@@ -99,7 +94,7 @@ contract DONSwapBEP20 is IDONSwapBEP20 {
                 keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
             )
         );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ECDSA.recover(digest, v, r, s);
         require(recoveredAddress != address(0) && recoveredAddress == owner, 'DONSwap: INVALID_SIGNATURE');
         _approve(owner, spender, value);
     }

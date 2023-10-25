@@ -1,4 +1,6 @@
+import { keccak256 } from '@ethersproject/solidity'
 import { ethers } from 'hardhat'
+import { bytecode } from '../artifacts/contracts/DONSwapPair.sol/DONSwapPair.json'
 
 async function main() {
   // eslint-disable-next-line no-unused-vars
@@ -11,8 +13,12 @@ async function main() {
   await factory.setFeeTo('0x5dC3967ACc048b3644F86158DC164bF7303e6D55')
 
   console.log('Factory address:', factory.address)
+
+  // get init code hash
+  const initCodeHash = keccak256(['bytes'], [bytecode])
+  console.log('Factory INIT_CODE_PAIR_HASH', initCodeHash)
   // Modify DONSwapLibrary.sol to add the following hash
-  console.log('Factory INIT_CODE_PAIR_HASH', await factory.INIT_CODE_PAIR_HASH())
+  // console.log('Factory INIT_CODE_PAIR_HASH', await factory.INIT_CODE_PAIR_HASH())
 }
 
 main().catch(error => {

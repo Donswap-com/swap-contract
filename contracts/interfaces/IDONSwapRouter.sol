@@ -3,10 +3,14 @@ pragma solidity ^0.8.4;
 
 interface IDONSwapRouter {
     event AddLiquidity(address tokenA, address tokenB, uint256 liquidity);
+    event AddLiquidityETH(address token, uint256 liquidity);
+    event RemoveLiquidity(address tokenA, address tokenB, uint256 liquidity);
+    event RemoveLiquidityETH(address token, uint256 liquidity);
+    event Swap(address tokenA, address tokenB, uint256 amountA, uint256 amountB);
+    event SwapSupportingFeeOnTransferTokens(address tokenA, address tokenB, address to, uint256 amount);
 
     function factory() external view returns (address);
 
-    // solhint-disable-next-line func-name-mixedcase
     function WBNB() external view returns (address);
 
     function addLiquidity(

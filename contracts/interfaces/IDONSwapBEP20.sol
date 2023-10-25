@@ -23,10 +23,8 @@ interface IDONSwapBEP20 {
 
     function transferFrom(address from, address to, uint256 value) external returns (bool);
 
-    // solhint-disable-next-line
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
-    // solhint-disable-next-line
     function PERMIT_TYPEHASH() external pure returns (bytes32);
 
     function nonces(address owner) external view returns (uint256);

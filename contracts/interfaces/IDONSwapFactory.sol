@@ -19,7 +19,4 @@ interface IDONSwapFactory {
     function setFeeTo(address) external;
 
     function setFeeToSetter(address) external;
-
-    // solhint-disable-next-line
-    function INIT_CODE_PAIR_HASH() external view returns (bytes32);
 }

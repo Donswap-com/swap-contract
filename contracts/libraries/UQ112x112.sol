@@ -2,8 +2,7 @@
 pragma solidity ^0.8.4;
 
 library UQ112x112 {
-    // solhint-disable-next-line
-    uint224 constant Q112 = 2**112;
+    uint224 constant Q112 = 2 ** 112;
 
     function encode(uint112 y) internal pure returns (uint224 z) {
         z = uint224(y) * Q112;

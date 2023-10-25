@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL
 pragma solidity ^0.8.4;
 
-import './IDONSwapBEP20.sol';
+import {IDONSwapBEP20} from './IDONSwapBEP20.sol';
 
 interface IDONSwapPair is IDONSwapBEP20 {
     event Mint(address indexed sender, uint256 amount0, uint256 amount1);
@@ -16,7 +16,6 @@ interface IDONSwapPair is IDONSwapBEP20 {
     );
     event Sync(uint112 reserve0, uint112 reserve1);
 
-    // solhint-disable-next-line
     function MINIMUM_LIQUIDITY() external pure returns (uint256);
 
     function factory() external view returns (address);

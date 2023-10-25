@@ -18,9 +18,7 @@ contract WBNB {
         deposit();
     }
 
-    receive() external payable {
-        // solhint-disable-previous-line no-empty-blocks
-    }
+    receive() external payable {}
 
     function deposit() public payable {
         balanceOf[msg.sender] += msg.value;
@@ -28,7 +26,6 @@ contract WBNB {
     }
 
     function withdraw(uint256 wad) public {
-        // solhint-disable-next-line reason-string
         require(balanceOf[msg.sender] >= wad);
         balanceOf[msg.sender] -= wad;
         payable(msg.sender).transfer(wad);
@@ -50,11 +47,9 @@ contract WBNB {
     }
 
     function transferFrom(address src, address dst, uint256 wad) public returns (bool) {
-        // solhint-disable-next-line reason-string
         require(balanceOf[src] >= wad);
 
         if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
-            // solhint-disable-next-line reason-string
             require(allowance[src][msg.sender] >= wad);
             allowance[src][msg.sender] -= wad;
         }

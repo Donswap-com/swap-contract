@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import '../interfaces/IDONSwapPair.sol';
+import {IDONSwapPair} from '../interfaces/IDONSwapPair.sol';
 
 library DONSwapLibrary {
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
